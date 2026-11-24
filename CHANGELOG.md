@@ -6,6 +6,27 @@ This project follows a simple versioning convention to track significant documen
 
 ---
 
+## [2.2] - 2026-11-24
+
+### Updated
+
+- Updated author metadata to Kota Vikramdev.
+- Aligned the project scope to 6 products and 4 channels.
+- Defined key table names and table grains.
+- Added configurable tax rules and effective-date logic.
+- Documented CASA calculation methods and carry-forward formulas.
+- Defined signed ledger conventions and reversal policies.
+- Introduced deterministic idempotency key design with rule versioning.
+- Added historical KYC guidance and slab boundary definitions.
+- Improved reconciliation rules between summary and ledger data.
+- Strengthened auditability, traceability, and data governance controls.
+
+### Objective
+
+Freeze the project scope and establish a stable baseline for solution design, data modeling, and implementation.
+
+---
+
 ## [2.1] - 2026-11-24
 
 ### Updated
