@@ -6,6 +6,20 @@ This project follows a simple versioning convention to track significant documen
 
 ---
 
+## [2.4] - 2026-11-25
+
+### Added
+- Created and finalized `docs/03_data_relationships.md` (Version 1.0).
+- Documented source dataset relationships, cardinalities and dependency order.
+- Defined referential integrity, effective dating, rule precedence and historical validity checks.
+- Established orphan, duplicate and conflicting record handling, including quarantine and reprocessing principles.
+- Documented design assumptions covering source data, financial processing and technology constraints.
+
+### Objective
+Complete the source data relationship and dependency design before beginning synthetic data generation and implementation.
+
+---
+
 ## [2.3] - 2026-11-25
 
 ### Added
