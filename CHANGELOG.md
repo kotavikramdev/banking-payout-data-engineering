@@ -6,6 +6,20 @@ This project follows a simple versioning convention to track significant documen
 
 ---
 
+## [2.3] - 2026-11-25
+
+### Added
+- Created the Synthetic Source Data Dictionary covering all 11 source datasets.
+- Defined dataset grains, primary keys, foreign keys, column data types, nullability and validation rules.
+- Documented historical agreement and KYC handling, effective-dated rate cards, incentive slabs, configurable tax rules, adjustments and partner invoice structures.
+- Established data-quality rules for duplicate events, referential integrity, conflicting records and financial adjustments.
+- Finalized `docs/02_data_dictionary.md` as Version 1.0.
+
+### Objective
+Establish a clear source-data foundation and validated schema definitions before designing dataset relationships and generating synthetic data.
+
+--- 
+
 ## [2.2] - 2026-11-24
 
 ### Updated
