@@ -216,13 +216,13 @@ Each tax rule in `src_tax_rules` defines an effective start date, effective end 
 * **Effective-Date Basis:** Determines whether tax rules match against `disbursement_date` / `account_opening_date` (transaction date), `invoice_date`, or `payout_date`.
 * **Configured Tax Base:** May include base commission, incentives, or combined eligible financial amounts as defined by the active rule configuration.
 
-$$
+```math
 \text{TDS Amount} = \text{Configured TDS Tax Base} \times \text{TDS Rate (\%)}
-$$
+```
 
-$$
-\text{GST Amount} = \begin{cases} \text{Configured GST Tax Base} \times \text{GST Rate (\%)} & \text{if Partner is GST Registered \& Invoiced} \\ 0 & \text{otherwise} \end{cases}
-$$
+```math
+\text{GST Amount} = \begin{cases} \text{Configured GST Tax Base} \times \text{GST Rate (\%)} & \text{if Partner is GST Registered and Invoiced} \\ 0 & \text{otherwise} \end{cases}
+```
 
 #### 7.1.4 Carry-Forward Balance Mechanics & Formulas
 
@@ -357,9 +357,9 @@ Reconciliation is performed by summing signed ledger amounts directly without ap
 
 To guarantee idempotent pipeline executions, every financial posting in `fact_payout_ledger` is assigned a deterministic key incorporating calculation component and group identifiers:
 
-$$
+```math
 \text{Idempotency Key} = \text{source\_event\_id} + \text{"\_"} + \text{posting\_component} + \text{"\_"} + \text{calculation\_group\_id} + \text{"\_"} + \text{payout\_cycle} + \text{"\_"} + \text{rule\_id} + \text{"\_"} + \text{rule\_version}
-$$
+```
 
 * **`source_event_id`:** Identifies the original business event (disbursement, acquisition, adjustment).
 * **`posting_component`:** Distinguishes base commission, incentive, TDS, GST, clawback, etc.
@@ -410,9 +410,9 @@ The data engineering implementation will be evaluated against the following mand
 2. **SCD Type 2 Integrity:** Changes in partner master attributes expire previous dimension rows (`is_current = False`) and insert new current records.
 3. **Unambiguous Financial Reconciliation:**
 
-$$
+```math
 \sum_{i} \text{fact\_payout\_ledger.amount}_{\text{partner, cycle, } i} == \text{fact\_payout\_summary.net\_payable\_before\_carry\_forward}_{\text{partner, cycle}}
-$$
+```
 
 4. **100% Row-Level Exception Capture:** All identifiable row-level validation failures must be captured in `fact_payout_exceptions`. Critical technical failures must be recorded in `payout_batch_control` with `batch_status = FAILED`. Row-level errors must not unnecessarily stop processing of otherwise valid records.
 
