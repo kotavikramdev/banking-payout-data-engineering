@@ -27,6 +27,7 @@ RANDOM_SEED = 42
 
 TRANSACTION_START_DATE = date(2025, 1, 1)
 TRANSACTION_END_DATE = date(2026, 10, 31)
+AS_OF_DATE = date(2026, 10, 31)
 
 
 # --------------------------------------------------
