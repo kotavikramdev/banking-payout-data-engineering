@@ -4,6 +4,32 @@ All notable changes to this project are documented in this file.
 
 This project follows a simple versioning convention to track significant documentation and implementation milestones.
 
+---
+
+## [Phase 2A — Source Integration Readiness]
+
+### Added
+
+**Component:** Source Data Validation  
+**Status:** Completed
+
+- Added `scripts/data_validation/validate_source_integrity.py` for cross-dataset validation of all 11 generated source datasets.
+- Validated primary-key uniqueness and non-null constraints.
+- Validated mandatory and conditional foreign-key references.
+- Validated partner-rule applicability and product-category constraints.
+- Validated polymorphic adjustment references against disbursement and CASA source events, including partner/product consistency.
+- Checked for conflicting CASA account-month AMB measurements.
+- Checked partner-scoped invoice business-key uniqueness.
+
+### Validation
+- Datasets checked: 11
+- Total records checked: 3,754
+- Result: All source integrity checks passed.
+- Data corrections required: None identified by this validator.
+
+### Next 
+Begin Bronze-layer ingestion design and implementation.
+
 --- 
 
 ## [Phase 1] – Source Data Generation Complete
