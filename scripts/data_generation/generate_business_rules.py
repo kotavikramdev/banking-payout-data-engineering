@@ -3,28 +3,34 @@ from datetime import timedelta
 
 import pandas as pd
 
-from config import (
-    GENERATED_DATA_DIR,
-    RANDOM_SEED,
-    RECORD_COUNTS,
-    TRANSACTION_START_DATE,
-    TRANSACTION_END_DATE,
-    AS_OF_DATE,
-    ensure_output_directories,
-)
+try:
+    from .config import (
+        PROJECT_ROOT,
+        GENERATED_DATA_DIR,
+        RANDOM_SEED,
+        TRANSACTION_START_DATE,
+        TRANSACTION_END_DATE,
+        RECORD_COUNTS,
+        AS_OF_DATE,
+        ensure_output_directories,
+    )
+except ImportError:
+    from config import (
+        PROJECT_ROOT,
+        GENERATED_DATA_DIR,
+        RANDOM_SEED,
+        TRANSACTION_START_DATE,
+        TRANSACTION_END_DATE,
+        RECORD_COUNTS,
+        AS_OF_DATE,
+        ensure_output_directories,
+    )
 
 
-# --------------------------------------------------
-# 1. INITIALIZE RANDOM GENERATOR
-# --------------------------------------------------
-
+# Initialize Random Generator
 random.seed(RANDOM_SEED)
 
-
-# --------------------------------------------------
-# 2. AGREEMENT REFERENCE DATA
-# --------------------------------------------------
-
+# Agreement Reference Data
 AGREEMENT_STATUSES = [
     "ACTIVE",
     "EXPIRED",
@@ -34,9 +40,48 @@ AGREEMENT_STATUSES = [
 
 AGREEMENT_STATUS_WEIGHTS = [0.65, 0.15, 0.10, 0.10]
 
+# KYC Reference Data
+KYC_STATUSES = [
+    "PENDING",
+    "VERIFIED",
+    "REJECTED",
+    "EXPIRED",
+]
+
+# Partner Types
+PARTNER_TYPES = [
+    "DSA",
+    "AUTO_DEALER",
+    "TRACTOR_DEALER",
+    "CONNECTOR",
+]
+
+# Loan Products
+LOAN_PRODUCT_IDS = [
+    "PROD001",
+    "PROD002",
+    "PROD003",
+    "PROD004",
+    "PROD005",
+]
+
+# CASA Product
+CASA_PRODUCT_ID = "PROD006"
+
+# Supported Commission Modes
+COMMISSION_MODES = [
+    "LOAN_RATE",
+    "AMB_RATE",
+    "FIXED_PER_ACCOUNT",
+    "AMB_TIERED",
+]
+
+# Synthetic As-Of Date
+RATE_CARD_AS_OF_DATE = AS_OF_DATE
+
 
 # --------------------------------------------------
-# 3. HELPER FUNCTION
+# HELPER FUNCTION
 # --------------------------------------------------
 
 def random_date(start_date, end_date):
@@ -50,7 +95,7 @@ def random_date(start_date, end_date):
 
 
 # --------------------------------------------------
-# 4. GENERATE PARTNER AGREEMENTS
+# GENERATE PARTNER AGREEMENTS
 # --------------------------------------------------
 
 def generate_partner_agreements(partner_df):
@@ -204,81 +249,7 @@ def generate_partner_agreements(partner_df):
 
 
 # --------------------------------------------------
-# 5. EXPORT DATASET
-# --------------------------------------------------
-
-def export_dataset(dataframe, dataset_name):
-
-    output_path = GENERATED_DATA_DIR / f"{dataset_name}.csv"
-
-    dataframe.to_csv(
-        output_path,
-        index=False,
-        encoding="utf-8",
-    )
-
-    print(
-        f"{dataset_name}: {len(dataframe)} records exported"
-    )
-
-
-# --------------------------------------------------
-# 6. MAIN EXECUTION
-# --------------------------------------------------
-
-def main():
-
-    ensure_output_directories()
-
-    partner_path = (
-        GENERATED_DATA_DIR / "src_partner_master.csv"
-    )
-
-    if not partner_path.exists():
-        raise FileNotFoundError(
-            "Partner master CSV not found. "
-            "Generate partner master data first."
-        )
-
-    partner_df = pd.read_csv(partner_path)
-
-    # Generate agreements.
-    agreement_df = generate_partner_agreements(
-        partner_df
-    )
-
-    export_dataset(
-        agreement_df,
-        "src_partner_agreements",
-    )
-
-    # Generate KYC history.
-    kyc_df = generate_partner_kyc(
-        partner_df
-    )
-
-    export_dataset(
-        kyc_df,
-        "src_partner_kyc",
-    )
-
-    print("\nBusiness rule data generation completed.")
-
-
-# --------------------------------------------------
-# 7. KYC REFERENCE DATA
-# --------------------------------------------------
-
-KYC_STATUSES = [
-    "PENDING",
-    "VERIFIED",
-    "REJECTED",
-    "EXPIRED",
-]
-
-
-# --------------------------------------------------
-# 8. GENERATE PARTNER KYC HISTORY
+# GENERATE PARTNER KYC HISTORY
 # --------------------------------------------------
 
 def generate_partner_kyc(partner_df):
@@ -418,6 +389,477 @@ def generate_partner_kyc(partner_df):
                 effective_from = effective_to
 
     return pd.DataFrame(records)
+
+
+# --------------------------------------------------
+# GENERATE LOAN RATE CARDS
+# --------------------------------------------------
+def generate_loan_rate_cards(partner_df, start_counter=1):
+
+    records = []
+
+    partner_types = PARTNER_TYPES
+    product_ids = LOAN_PRODUCT_IDS
+
+    # Generate 20 partner-type rate cards:
+    # 4 partner types x 5 loan products.
+    for partner_type in partner_types:
+
+        for product_id in product_ids:
+
+            effective_from = random_date(
+                TRANSACTION_START_DATE,
+                TRANSACTION_END_DATE
+            )
+
+            effective_to = None
+
+            # Some rules have historical end dates.
+            if random.random() < 0.30:
+
+                remaining_days = (
+                    TRANSACTION_END_DATE - effective_from
+                ).days
+
+                if remaining_days >= 30:
+                    period_days = random.randint(
+                        30,
+                        min(365, remaining_days)
+                    )
+
+                    effective_to = (
+                        effective_from
+                        + timedelta(days=period_days)
+                    )
+
+            rule_status = (
+                "INACTIVE"
+                if effective_to is not None
+                else random.choice(["ACTIVE", "INACTIVE"])
+            )
+
+            created_at = (
+                pd.Timestamp(effective_from)
+                + pd.Timedelta(hours=10)
+            )
+
+            updated_at = (
+                pd.Timestamp(effective_to)
+                if effective_to is not None
+                else created_at + pd.Timedelta(days=30)
+            )
+
+            records.append({
+                "rate_card_id": f"RATE{start_counter:04d}",
+                "partner_id": None,
+                "partner_type": partner_type,
+                "product_id": product_id,
+                "commission_mode": "LOAN_RATE",
+                "commission_rate": round(
+                    random.uniform(0.005, 0.015), 6
+                ),
+                "fixed_amount": None,
+                "effective_from": effective_from.isoformat(),
+                "effective_to": (
+                    effective_to.isoformat()
+                    if effective_to else None
+                ),
+                "rule_status": rule_status,
+                "rule_version": 1,
+                "tier_group_id": None,
+                "tier_lower_bound": None,
+                "tier_upper_bound": None,
+                "created_at": created_at.isoformat(),
+                "updated_at": updated_at.isoformat(),
+            })
+
+            start_counter += 1
+
+    # Generate partner-specific loan rate cards.
+    # Each partner-product combination is unique.
+    # The configured total includes 40 CASA rate cards.
+    loan_partner_type_count = len(partner_types) * len(product_ids)
+    casa_rate_card_count = 40
+
+    partner_specific_count = (
+        RECORD_COUNTS["src_rate_cards"]
+        - loan_partner_type_count
+        - casa_rate_card_count
+    )
+
+    partner_product_combinations = [
+        (partner_id, product_id)
+        for partner_id in partner_df["partner_id"].tolist()
+        for product_id in product_ids
+    ]
+
+    selected_combinations = random.sample(
+        partner_product_combinations,
+        partner_specific_count
+    )
+
+    for partner_id, product_id in selected_combinations:
+
+        effective_from = random_date(
+            TRANSACTION_START_DATE,
+            TRANSACTION_END_DATE
+        )
+
+        effective_to = None
+
+        if random.random() < 0.30:
+
+            remaining_days = (
+                TRANSACTION_END_DATE - effective_from
+            ).days
+
+            if remaining_days >= 30:
+                period_days = random.randint(
+                    30,
+                    min(365, remaining_days)
+                )
+
+                effective_to = (
+                    effective_from
+                    + timedelta(days=period_days)
+                )
+
+        rule_status = (
+            "INACTIVE"
+            if effective_to is not None
+            else random.choice(["ACTIVE", "INACTIVE"])
+        )
+
+        created_at = (
+            pd.Timestamp(effective_from)
+            + pd.Timedelta(hours=10)
+        )
+
+        updated_at = (
+            pd.Timestamp(effective_to)
+            if effective_to is not None
+            else created_at + pd.Timedelta(days=30)
+        )
+
+        records.append({
+            "rate_card_id": f"RATE{start_counter:04d}",
+            "partner_id": partner_id,
+            "partner_type": None,
+            "product_id": product_id,
+            "commission_mode": "LOAN_RATE",
+            "commission_rate": round(
+                random.uniform(0.007, 0.018), 6
+            ),
+            "fixed_amount": None,
+            "effective_from": effective_from.isoformat(),
+            "effective_to": (
+                effective_to.isoformat()
+                if effective_to else None
+            ),
+            "rule_status": rule_status,
+            "rule_version": 1,
+            "tier_group_id": None,
+            "tier_lower_bound": None,
+            "tier_upper_bound": None,
+            "created_at": created_at.isoformat(),
+            "updated_at": updated_at.isoformat(),
+        })
+
+        start_counter += 1
+
+    return records
+
+
+# --------------------------------------------------
+# GENERATE CASA RATE CARDS
+# --------------------------------------------------
+def generate_casa_rate_cards(partner_df, start_counter=51):
+
+    records = []
+    tier_counter = 1
+
+    # Synthetic AMB tiers: lower-inclusive, upper-exclusive.
+    amb_tiers = [
+        (0, 10000, 0.0005),
+        (10000, 50000, 0.0010),
+        (50000, None, 0.0015),
+    ]
+
+    # Select four distinct partners for partner-specific rules.
+    selected_partners = random.sample(
+        partner_df["partner_id"].tolist(),
+        4
+    )
+
+    def generate_effective_dates():
+
+        effective_from = random_date(
+            TRANSACTION_START_DATE,
+            TRANSACTION_END_DATE
+        )
+
+        effective_to = None
+
+        if random.random() < 0.30:
+
+            remaining_days = (
+                TRANSACTION_END_DATE - effective_from
+            ).days
+
+            if remaining_days >= 30:
+                period_days = random.randint(
+                    30,
+                    min(365, remaining_days)
+                )
+
+                effective_to = (
+                    effective_from
+                    + timedelta(days=period_days)
+                )
+
+        rule_status = (
+            "INACTIVE"
+            if effective_to is not None
+            else random.choice(["ACTIVE", "INACTIVE"])
+        )
+
+        created_at = (
+            pd.Timestamp(effective_from)
+            + pd.Timedelta(hours=10)
+        )
+
+        updated_at = (
+            pd.Timestamp(effective_to)
+            if effective_to is not None
+            else created_at + pd.Timedelta(days=30)
+        )
+
+        return (
+            effective_from,
+            effective_to,
+            rule_status,
+            created_at,
+            updated_at,
+        )
+
+    def append_rate_card(
+        partner_id,
+        partner_type,
+        commission_mode,
+        commission_rate,
+        fixed_amount,
+        effective_from,
+        effective_to,
+        rule_status,
+        created_at,
+        updated_at,
+        tier_group_id=None,
+        tier_lower_bound=None,
+        tier_upper_bound=None,
+    ):
+
+        nonlocal start_counter
+
+        records.append({
+            "rate_card_id": f"RATE{start_counter:04d}",
+            "partner_id": partner_id,
+            "partner_type": partner_type,
+            "product_id": CASA_PRODUCT_ID,
+            "commission_mode": commission_mode,
+            "commission_rate": commission_rate,
+            "fixed_amount": fixed_amount,
+            "effective_from": effective_from.isoformat(),
+            "effective_to": (
+                effective_to.isoformat()
+                if effective_to else None
+            ),
+            "rule_status": rule_status,
+            "rule_version": 1,
+            "tier_group_id": tier_group_id,
+            "tier_lower_bound": tier_lower_bound,
+            "tier_upper_bound": tier_upper_bound,
+            "created_at": created_at.isoformat(),
+            "updated_at": updated_at.isoformat(),
+        })
+
+        start_counter += 1
+
+    def generate_rules(partner_id, partner_type):
+
+        nonlocal tier_counter
+
+        (
+            effective_from,
+            effective_to,
+            rule_status,
+            created_at,
+            updated_at,
+        ) = generate_effective_dates()
+
+        # 1. AMB_RATE
+        append_rate_card(
+            partner_id=partner_id,
+            partner_type=partner_type,
+            commission_mode="AMB_RATE",
+            commission_rate=round(
+                random.uniform(0.0005, 0.0025), 6
+            ),
+            fixed_amount=None,
+            effective_from=effective_from,
+            effective_to=effective_to,
+            rule_status=rule_status,
+            created_at=created_at,
+            updated_at=updated_at,
+        )
+
+        # 2. FIXED_PER_ACCOUNT
+        append_rate_card(
+            partner_id=partner_id,
+            partner_type=partner_type,
+            commission_mode="FIXED_PER_ACCOUNT",
+            commission_rate=None,
+            fixed_amount=random.choice([100, 200, 300, 400, 500]),
+            effective_from=effective_from,
+            effective_to=effective_to,
+            rule_status=rule_status,
+            created_at=created_at,
+            updated_at=updated_at,
+        )
+
+        # 3. AMB_TIERED
+        tier_group_id = f"CASA_TIER{tier_counter:04d}"
+        tier_counter += 1
+
+        for lower_bound, upper_bound, commission_rate in amb_tiers:
+
+            append_rate_card(
+                partner_id=partner_id,
+                partner_type=partner_type,
+                commission_mode="AMB_TIERED",
+                commission_rate=commission_rate,
+                fixed_amount=None,
+                effective_from=effective_from,
+                effective_to=effective_to,
+                rule_status=rule_status,
+                created_at=created_at,
+                updated_at=updated_at,
+                tier_group_id=tier_group_id,
+                tier_lower_bound=lower_bound,
+                tier_upper_bound=upper_bound,
+            )
+
+    # Generate partner-type CASA rules.
+    for partner_type in PARTNER_TYPES:
+        generate_rules(
+            partner_id=None,
+            partner_type=partner_type
+        )
+
+    # Generate partner-specific CASA rules.
+    for partner_id in selected_partners:
+        generate_rules(
+            partner_id=partner_id,
+            partner_type=None
+        )
+
+    return records
+
+
+# --------------------------------------------------
+# EXPORT DATASET
+# --------------------------------------------------
+
+def export_dataset(dataframe, dataset_name):
+
+    output_path = GENERATED_DATA_DIR / f"{dataset_name}.csv"
+
+    dataframe.to_csv(
+        output_path,
+        index=False,
+        encoding="utf-8",
+    )
+
+    print(
+        f"{dataset_name}: {len(dataframe)} records exported"
+    )
+
+
+# --------------------------------------------------
+# MAIN EXECUTION
+# --------------------------------------------------
+
+def main():
+
+    ensure_output_directories()
+
+    partner_path = (
+        GENERATED_DATA_DIR / "src_partner_master.csv"
+    )
+
+    if not partner_path.exists():
+        raise FileNotFoundError(
+            "Partner master CSV not found. "
+            "Generate partner master data first."
+        )
+
+    partner_df = pd.read_csv(partner_path)
+
+    # Generate agreements.
+    agreement_df = generate_partner_agreements(
+        partner_df
+    )
+
+    export_dataset(
+        agreement_df,
+        "src_partner_agreements",
+    )
+
+    # Generate KYC history.
+    kyc_df = generate_partner_kyc(
+        partner_df
+    )
+
+    export_dataset(
+        kyc_df,
+        "src_partner_kyc",
+    )
+
+    # Generate loan rate cards.
+    loan_rate_cards = generate_loan_rate_cards(
+        partner_df
+    )
+
+    # Generate CASA rate cards.
+    casa_rate_cards = generate_casa_rate_cards(
+        partner_df,
+        start_counter=61,
+    )
+
+    # Combine loan and CASA rate cards.
+    rate_card_df = pd.DataFrame(
+        loan_rate_cards + casa_rate_cards
+    )
+
+    # Validate configured record count.
+    expected_count = RECORD_COUNTS["src_rate_cards"]
+
+    if len(rate_card_df) != expected_count:
+        raise ValueError(
+            f"Expected {expected_count} rate cards, "
+            f"but generated {len(rate_card_df)}."
+        )
+
+    if rate_card_df["rate_card_id"].nunique() != expected_count:
+        raise ValueError(
+            "Duplicate rate_card_id values found."
+        )
+
+    export_dataset(
+        rate_card_df,
+        "src_rate_cards",
+    )
+
+    print("\nBusiness rule data generation completed.")
 
 
 if __name__ == "__main__":
