@@ -6,7 +6,31 @@ This project follows a simple versioning convention to track significant documen
 
 ---
 
-## [Phase 2A — Source Integration Readiness]
+## [Phase 2B — Bronze Layer Initial Ingestion] — 2026-11-27
+
+### Added
+- Created the Databricks notebook `notebooks/bronze/01_bronze_source_ingestion.ipynb`.
+- Implemented initial ingestion of all 11 synthetic source CSV datasets into managed Delta tables in the `banking_payout.bronze` schema.
+- Added ingestion metadata columns:
+  - `source_file_name`
+  - `ingestion_timestamp`
+  - `batch_id`
+
+### Validated
+- Successfully ingested all 11 source datasets, totaling **3,754 records**.
+- Verified expected record counts for every Bronze table.
+- Validated source column schemas and ingestion metadata.
+- Confirmed all 11 datasets passed validation with zero failures.
+
+### Platform
+- Databricks Free Edition
+- PySpark
+- Delta Lake
+- Unity Catalog
+
+---
+
+## [Phase 2A — Source Integration Readiness] — 2026-11-27
 
 ### Added
 
@@ -32,7 +56,7 @@ Begin Bronze-layer ingestion design and implementation.
 
 --- 
 
-## [Phase 1] – Source Data Generation Complete
+## [Phase 1 — Source Data Generation Complete] — 2026-11-27
 
 ### Added
 - Generated all 11 synthetic source datasets as defined by the project source data dictionary.
@@ -58,7 +82,7 @@ Begin Bronze-layer ingestion design and implementation.
 
 ---
 
-## [2.4] - 2026-11-25
+## [2.4] — 2026-11-25
 
 ### Added
 - Created and finalized `docs/03_data_relationships.md` (Version 1.0).
@@ -72,7 +96,7 @@ Complete the source data relationship and dependency design before beginning syn
 
 ---
 
-## [2.3] - 2026-11-25
+## [2.3] — 2026-11-25
 
 ### Added
 - Created the Synthetic Source Data Dictionary covering all 11 source datasets.
@@ -86,7 +110,7 @@ Establish a clear source-data foundation and validated schema definitions before
 
 --- 
 
-## [2.2] - 2026-11-24
+## [2.2] — 2026-11-24
 
 ### Updated
 
@@ -107,7 +131,7 @@ Freeze the project scope and establish a stable baseline for solution design, da
 
 ---
 
-## [2.1] - 2026-11-24
+## [2.1] — 2026-11-24
 
 ### Updated
 - Explicitly established the project as a single-handed, self-learning Data Engineering portfolio project.
@@ -128,7 +152,7 @@ Establish a realistic but entirely fictional banking payout scenario that demons
 
 ---
 
-## [2.0] - 2026-11-24
+## [2.0] — 2026-11-24
 
 ### Updated
 - Enhanced the initial Business Requirements Document.
@@ -140,7 +164,7 @@ Improve the completeness and engineering relevance of the business requirements 
 
 ---
 
-## [1.0] - 2026-11-24
+## [1.0] — 2026-11-24
 
 ### Added
 - Created the initial Business Requirements Document.
